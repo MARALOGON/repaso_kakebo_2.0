@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kakebo SPA</title>
+    <link rel="stylesheet" href="/static/css/milligram.css"><!-- esta linea enlaza a la carpeta static/css para que el navegador muestre los resultados con estilos y no solo un json-->
+    <link rel="stylesheet" href="/static/css/styles.css">
+    <script src="/static/js/spa.js"></script> <!-- Esta linea sirve para que el navegador enlace al archivo spa.js que es donde se va a crear el template que va a mostrar la pagina-->
+
+</head>
+<body> <!-- Aqui creo que el esqueleto, la estructura a mostrar en el navegador de la aplicación, como va a estar organizado lo que se muestre-->
+    <header>Kakebo 2.0</header>
+    <section class="container" id="principal"> <!-- escribiendo section.container#principal y dando a tab crea esta linea. Esta se refiere a que dentro de la clase container e id principal se va dibujar la estructura principal de la aplicación, es comomo crear el marco donde va a reflejarse toda la informacion-->
+        <h1>Control de movimientos</h1>
+        <div class="lista-movimientos"> <!--Este div lo creo para poder ir luego metiendole cosas desde el fichero spa.js, modificando el DOM como haciamos en anteriores programas-->
+            <table class="tabla-movimientos"><!-- Creo una clase tabla para luego con el querySelector desde el fichero spa.js poder insertar lo que decida en ese fichero-->
+                <thead>
+                    <tr>
+                        <th>Fecha</th>
+                        <th>Concepto</th>
+                        <th>Tipo</th>
+                        <th>Categoria</th>  
+                        <th>Cantidad</th>
+                    </tr>
+                </thead>
+                <tbody></tbody> <!--Aqui en tbody se mostrará, lo programado  desde el fichero spa.js, ire metiendo aqui las filas, una por cada movimiento que devuelve la api. el sitio donde voy a enganchar las celdas de la tabla que se cree-->
+            </table>
+
+        </div>
+        <div class="detail-movimiento"><!--Este div lo creo que que muestre otra tabla de detalle de movimientos, que se rellene automaticamente cuando seleccione uno de los movimientos que muestra la tabla principal, por si luego lo quiero borrar o modificar-->
+            Aquí irá el detalle
+        </div>
+    </section>
+    <footer>&copy 2021</footer>
+
+ 
+</body>
+</html>

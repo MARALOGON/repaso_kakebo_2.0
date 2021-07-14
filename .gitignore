@@ -1,0 +1,6 @@
+venv/
+.env
+**/__pyvcache__
+config.py
+data/
+.vscode/
