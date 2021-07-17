@@ -47,7 +47,24 @@ def detalleMovimiento(id=None):
             #El valor con 2 puntos (:) es el valor del campo de entrada, lo que viene en el json y el primer fecha es el nombre del campo en  la base de datos. Se utiliza esta sintaxis porque es la forma de un diccionario, que es lo qeu necesitamos para enviarlo a la base de datos
             #Los parametros de entrada van a ser request.json
 
-            return jsonify({"status":"success", "mensaje": "Registro modificado"})
+            return jsonify({"status":"success", "mensaje": "Registro modificado con éxito"})
         
+        if request.method == 'DELETE':
+            dbManager.modificaTablaSQL("""
+                DELETE FROM movimientos 
+                WHERE id = ?""", [id]) 
+
+            return jsonify({"status":"success", "mensaje": "Registro borrado con éxito"})
+
+        if request.method == 'POST':
+            dbManager.modificaTablaSQL("""
+            INSERT INTO movimientos 
+                (fecha, concepto, esGasto, categoria, cantidad) 
+            VALUES (:fecha, :concepto, :esGasto, :categoria, :cantidad)
+            """, request.json) #Aqui en este modificaTablaSQL creo primero las columnas de las campos donde van a ir los datos y luego le meto los valores a cada uno de los campos, los valores, que se han introducido en el formulario de detalle de movimientos en el navegador y lo envio con el metodo request en forma de json al servidor
+    
+            return jsonify({"status":"success", "mensaje": "Registro creado con éxito"}), HTTPStatus.CREATED
+    
     except sqlite3.Error as e:
+        print("error", e)
         return jsonify({"status":"fail", "mensaje": "Error en base de datos: {}".format(e)}), HTTPStatus.BAD_REQUEST

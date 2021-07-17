@@ -9,8 +9,8 @@ const categorias = { //Creo el objeto categorias en forma de diccionario, si bie
 let losMovimientos  //Creo la variable losMvimientos vacia en el ambito global
 
 
-function recibeRespuesta() {
-    if (this.readyState === 4 && this.status === 200) {
+function recibeRespuesta() { //creo esta función para que se muestre en el navegador, en la tabla de movimientos,las modificaciones de los movimientos realizadas a treves del formulario de detalle de movimiento
+    if (this.readyState === 4 && (this.status === 200 || this.status === 201)) { //Aqui dice si el status es igual o (||) es igual a 201, que es el codigo de status para un nuevo objeto creado, que es lo que hacemos con la funcion llamaApiCreaMovimiento. Quiere decir "si todo ha ido bien o has creado un recurso"
         const respuesta = JSON.parse(this.responseText)
 
         if (respuesta.status !== "success") {
@@ -18,11 +18,14 @@ function recibeRespuesta() {
             return
         }
 
-       llamaApiMovimientos() //Este llamaApiMovimientos va a hacer lo mismo que el onload, va a crear la peticion 'GET', `http://localhost:5000/api/v1/movimientos`, la va a lanzar, cuando llegue, muestraMovimientos va a volver a mostrar la lista. Lo que no hace muestraMovimientos es limpiar la lista, asi qeu lo vamos a hacer quitando el const tbody de donde estaba
+        alert(respuesta.mensaje) //Este alert es para que cuando se haga una modificación con exito salga un mensaje, sale el mismo mensaje que hemos puesto en el archivo views.py cuando se realiza una modificación con exito ("Registro modificado con éxito")
+
+        llamaApiMovimientos() //Este llamaApiMovimientos va a hacer lo mismo que el onload, va a crear la peticion 'GET', `http://localhost:5000/api/v1/movimientos`, la va a lanzar, cuando llegue, muestraMovimientos va a volver a mostrar la lista. Lo que no hace muestraMovimientos es limpiar la lista, asi qeu lo vamos a hacer quitando el const tbody de donde estaba
+        
     }
 }
 
-function detallaMovimiento(id) {
+function detallaMovimiento(id) { //Creo esta función para que se mnuestre en el formulario de detalle de movimiento los datos de todos los campos que contiene el movimiento seleccionado, sobre el cual pincho, de toda la tabla de movimientos mostrada en el navegador
 
     //movimiento = losMovimientos.filter(item => item.id == id)[0] Esta es la maera reducida de poner el for de abajo
     let movimiento 
@@ -47,12 +50,12 @@ function detallaMovimiento(id) {
     }
 }
 
-function muestraMovimientos() {
+function muestraMovimientos() { //Creo esta función para que se muestren todos los registros de la base de datos en la tabla de movmientos que hemos creado para visualilzar la base de datos en el navegador
     if (this.readyState === 4 && this.status === 200) { //Aqui el objeto this se utiliza como equivalente a quien invoca la funcion, que en este caso es xhr.  
         const respuesta = JSON.parse(this.responseText) //JSON es un objeto de Javascript. El método JSON.parse() analiza una cadena de texto como JSON, transformando opcionalmente  el valor producido por el análisis. Con esto conseguimos un objeto parecido a un diccionario Python que vamos a poder manejar. 
         
         if (respuesta.status !== "success") {
-            alert("Se ha producido un error en la traducción")
+            alert("Se ha producido un error en la consulta de movimientos")
             return
         }
 
@@ -93,27 +96,84 @@ function llamaApiMovimientos() { //Esta función abre la llamada a la api de mov
     xhr.send()
 }
 
+function capturaFormMovimiento() { //Esta función la creo para capturar los datos que se incluyan en los campos del formulario de detalle de movimiento, bien sea para modificar o para crerar, que eran las dos funciones que originalmente contenian este codigo
+    //Con esto recupero los datos del formulario para poder enviarlos en un objeto en forma de json al servidor
+    const movimiento = {}// Ahira tengo que coger los datos que ha modificado el usuario y transformarlos para enviarlos al servidor. Para ello, creamos una const y laigualamos a un diccionario vacio {}, que es el json que voy a enviar
+    movimiento.fecha = document.querySelector("#fecha").value //En la clave de diccionario movimiento.fecha se incluira el nuevo valor introducido, si es que se ha modificado, sino guarda el que esté
+    movimiento.concepto = document.querySelector("#concepto").value
+    movimiento.categoria = document.querySelector("#categoria").value
+    movimiento.cantidad = document.querySelector("#cantidad").value
+    if (document.querySelector("#gasto").checked) { //Aqui le digo, si el id gasto (que es el radiobutton), esta checado, 
+        movimiento.esGasto = 1  //Entonces, es un gasto, debe guardarse como gasto en la base de datos
+    } else {
+        movimiento.esGasto = 0 //Y si no esta checado el boton de gasto, esGasto es igaul a 0, es decir, es un ingreso y se guardara asi en la base de datos
+    }
+    return movimiento //DEvuelvo el objeto movimiento que he creado con los nuevos datos de los campos
+
+}
+
+
+function llamaApiModificaMovimientos(ev) { //Esta funcion la creo para poder modificar los movimientos que se meustran en la tabla de movimientos del navegador, despues de haber llamado a la API que muestra lo uqe hya en la base de datos
+        ev.preventDefault()   // Con el ev.preventDefault, lo que se consigue es que por defecto, no se relance la pagina, se para ese evento
+        
+        id = document.querySelector("#idmovimiento").value //Con esto lo que hago es guardar en la memoria del navegador el valor del id que sale al seleccionar un movimiento de la tabla de movimientos, lo guardo en la variable id
+        
+        if(!id) { //Si el id no esta informado, es decir si no se ha seleccionado movimiento para modificar
+            alert("Selecciona un movimiento para modificar") //Salta este mensaje de error
+            return
+        }   
+        
+        const movimiento = capturaFormMovimiento() // //En esta variable movimiento guardo el objeto que devuelve la funcion capturaFormMovimiento, que son los nuevos datos que he introducido en el formulario para modificar un registro existente
+        
+         
+
+        xhr.open("PUT", `http://localhost:5000/api/v1/movimiento/${id}`, true)  //Ahora lanzo la peticion con el xhr.open, igual que he hecho antes, pero aqui incluido, para que se haga este envio en caso de que queramos modificar, ya que ya no quiero que vaya a la fucnion muestraMovimientos, como hace el otro xhr.open que tengo mas arriba. Se incluye el id, que se ha guardado en la memoria en la linea anterior
+        xhr.onload = recibeRespuesta //Este onload, que es el punto de recuperacion de los datos, es para esta petición de PUT. Se va a la función recibeRespuesta, que es la que va a mostrar la modificación en la tabla de movimientos al ejecutarse 
+        
+        xhr.setRequestHeader("Content-Type", "application/json;charset=UTF-8") //Esto lo que está diciendo es: voy a mter en la  cabecera un json, para que en el archivo views del servidor sepa lo que esperar. En la cabecera viaja el tipo de informacion que va en el body, que en este caso es un json
+        
+        xhr.send(JSON.stringify(movimiento))   //El metodo stringify lo que hace en este caso es coger un objeto de javascript y convertirlo en un texto que viaja al servidor, es el contrario a json.pars
+}
+
+function llamaApiBorraMovimientos(ev) { //Esta funcion la creo para poder borrar los movimientos que seleccione que se muestran en la tabla de movimientos del navegador, despues de haber llamado a la API que muestra lo que hay en la base de datos, lo hago con el boton borrar
+    ev.preventDefault()   // Con el ev.preventDefault, lo que se consigue es que por defecto, no se relance la pagina, se para ese evento
+    id = document.querySelector("#idmovimiento").value //Con esto lo que hago es guardar en la memoria del navegador el valor del id que sale al seleccionar un movimiento de la tabla de movimientos, lo guardo en la variable id
+    //En este caso de borrar, no hay que hacer todo lo que se hace en la funcion de modificar, porque solo n ecesitamos saber el id del movimiento para borrarlo, nos da igual los datos que contenga, por eso utilizo la linea de arriba, para capturar el id en la memoria del navegador
+
+    if(!id) { //Si el id no esta informado, es decir si no se ha seleccionado movimiento para borrar
+        alert("Selecciona un movimiento para borrar") //Salta este mensaje de error
+        return
+    
+    }    
+    xhr.open("DELETE", `http://localhost:5000/api/v1/movimiento/${id}`, true)  //Ahora lanzo la peticion DELETE,para borrar el movimiento, con el xhr.open, igual que he hecho antes, pero aqui incluido, para que se haga este envio en caso de que queramos borrar, ya que ya no quiero que vaya a la fucnion muestraMovimientos, como hace el otro xhr.open que tengo mas arriba. Se incluye el id, que se ha guardado en la memoria en la linea anterior para identificar de que movimiento se trata y borrarlo en la base de datos
+    xhr.onload = recibeRespuesta //Este onload, que es el punto de recuperacion de los datos, es para esta petición de DELETE. Se va a la función recibeRespuesta, que es la que va a mostrar el mensaje de borrado en la tabla de movimientos al ejecutarse 
+    xhr.send() //Hago la llamada al servidor para que borre el movimiento en la base de datos
+
+}
+
+function llamaApiCreaMovimientos(ev) {//Esta funcion la creo para poder crear nuevos movimientos que intorduzca a traves del formualrio de detalle de movimiento, para que se graben en la base de datos y se muestren en la tabla de movimientos del navegador, despues de haber llamado a la API que muestra lo que hay en la base de datos, lo hago con el boton crear
+    ev.preventDefault()   // Con el ev.preventDefault, lo que se consigue es que por defecto, no se relance la pagina, se para ese evento
+    //En esta funcion no ponemos nada sobre guardar el id, porque cuando se crea el movimiento aun no tiene, quien se lo va a asignar es la base de datos, cuando la peticion viaje al servidor
+    
+    const movimiento = capturaFormMovimiento() //En esta variable movimiento guardo el objeto que devuelve la funcion capturaFormMovimiento, que son los nuevos datos que he introducido en el formulario para crera un nuevo registro
+    
+    xhr.open("POST", `http://localhost:5000/api/v1/movimiento`, true)  //Ahora lanzo la peticion con el xhr.open, sin id 
+    xhr.onload = recibeRespuesta //Este onload, que es el punto de recuperacion de los datos, es para esta petición de PUT. Se va a la función recibeRespuesta, que es la que va a mostrar la modificación en la tabla de movimientos al ejecutarse 
+        
+    xhr.setRequestHeader("Content-Type", "application/json;charset=UTF-8") //Esto lo que está diciendo es: voy a mter en la  cabecera un json, para que en el archivo views del servidor sepa lo que esperar. En la cabecera viaja el tipo de informacion que va en el body, que en este caso es un json
+        
+    xhr.send(JSON.stringify(movimiento))   //El metodo stringify lo que hace en este caso es coger un objeto de javascript y convertirlo en un texto que viaja al servidor, es el contrario a json.pars
+}
 window.onload = function() { /*Lo que haya dentro de esta funcion se va a ejecutar cuando la pagina termina de cargarse, aunque el script que hay en el fichero spa.html que hace referencia al fichero spa.js, este al principio del documento, en el head, y en teoria se ejecutaria de lo primero. Se va a ejecutar cuando la pagina este cargada, cuando este renderizada, entonces empezara a ejecutar lo que este dentro de la funcion */
     llamaApiMovimientos() /*Cuando la ventana este cargada, entonces se llama a la funcionApiMovimientos*/
     
     document.querySelector("#modificar") //Una vez cargada del todo la pagina, ya si puedo utilizar el boton modificar
-        .addEventListener("click", (ev) => { //Como quiero capar el evento de refrescar la oagina cuando pulso modificar, tengo que capturarlo, para ello lo tengo que opner el evento como parametro de la funcion, porque lo primero que quiero hacer con ese evento de refrescar es que no se produzca, pararlo
-            ev.preventDefault()   // Con el ev.preventDefault, lo que se consigue es que por defecto, no se relance la pagina, se para ese evento
-            const movimiento = {}// Ahira tengo que coger los datos que ha modificado el usuario y transformarlos para enviarlos al servidor. Para ello, creamos una const y laigualamos a un diccionario vacio {}, que es el json que voy a enviar
-            movimiento.fecha = document.querySelector("#fecha").value //En la clave de diccionario movimiento.fecha se incluira el nuevo valor introducido, si es que se ha modificado, sino guarda el que esté
-            movimiento.concepto = document.querySelector("#concepto").value
-            movimiento.categoria = document.querySelector("#categoria").value
-            movimiento.cantidad = document.querySelector("#cantidad").value
-            if (document.querySelector("#gasto").checked) { //Aqui le digo, si el id gasto (que es el radiobutton), esta checado, 
-                movimiento.esGasto = 1  //Entonces, es un gasto, debe guardarse como gasto en la base de datos
-            } else {
-                movimiento.esGasto = 0 //Y si no esta checado el boton de gasto, esGasto es igaul a 0, es decir, es un ingreso y se guardara asi en la base de datos
-            }
-            id = document.querySelector("#idmovimiento").value //Con esto lo que hago es guardar en la memoria del navegador el valor del id que sale al seleccionar un movimiento de la tabla de movimientos, lo guardo en la variable id
-            xhr.open("PUT", `http://localhost:5000/api/v1/movimiento/${id}`, true)  //Ahora lanzo la peticion con el xhr.open, igual que he hecho antes, pero aqui incluido, para que se haga este envio en caso de que queramos modificar, ya que ya no quiero que vaya a la fucnion muestraMovimientos, como hace el otro xhr.open que tengo mas arriba. Se incluye el id, que se ha guardado en la memoria en la linea anterior
-            xhr.setRequestHeader("Content-Type", "application/josn;charset=UTF-8") //Esto lo que está diciendo es: voy a mter en la  cabecera un json, para que en el archivo views del servidor sepa lo que esperar. En la cabecera viaja el tipo de informacion que va en el body, que en este caso es un json
-            xhr.onload = recibeRespuesta //Este onload, que es el punto de recuperacion de los datos, es para esta petición de PUT 
-            
-            xhr.send(JSON.stringify(movimiento))   //El metodo stringify lo que hace en este caso es coger un objeto de javascript y convertirlo en un texto que viaja al servidor, es el contrario a json.pars
-        }
+        .addEventListener("click", llamaApiModificaMovimientos) //Esta linea llama a la funcion llamaApiModificaMovimientos para que procese los cambios cuando se pulsa el boton modificar, segun lo que contiene esta funcion
+    
+    document.querySelector("#borrar")
+        .addEventListener("click", llamaApiBorraMovimientos) //Esta linea llama a la funcion llamaApiBorraMovimientos para que procese los cambios cuando se pulsa el boton borrar, segun lo que contiene esta funcion
+
+        document.querySelector("#crear")
+        .addEventListener("click", llamaApiCreaMovimientos) //Esta linea llama a la funcion llamaApiCreaMovimientos para que procese los cambios cuando se pulsa el boton crear, segun lo que contiene esta funcion
+
 }
