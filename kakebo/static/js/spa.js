@@ -7,7 +7,7 @@ const categorias = { //Creo el objeto categorias en forma de diccionario, si bie
 }
 
 let losMovimientos  //Creo la variable losMvimientos vacia en el ambito global
-
+xhr = new XMLHttpRequest() //Creo el manejador de peticiones 
 
 function recibeRespuesta() { //creo esta función para que se muestre en el navegador, en la tabla de movimientos,las modificaciones de los movimientos realizadas a treves del formulario de detalle de movimiento
     if (this.readyState === 4 && (this.status === 200 || this.status === 201)) { //Aqui dice si el status es igual o (||) es igual a 201, que es el codigo de status para un nuevo objeto creado, que es lo que hacemos con la funcion llamaApiCreaMovimiento. Quiere decir "si todo ha ido bien o has creado un recurso"
@@ -87,8 +87,6 @@ function muestraMovimientos() { //Creo esta función para que se muestren todos 
     }
 }
 
-xhr = new XMLHttpRequest() //Creo el manejador de peticiones 
-
 
 function llamaApiMovimientos() { //Esta función abre la llamada a la api de movimientos y la envia
     xhr.open('GET', `http://localhost:5000/api/v1/movimientos`, true) /*Esta funcion lo que hace es crear la url */
@@ -112,6 +110,39 @@ function capturaFormMovimiento() { //Esta función la creo para capturar los dat
 
 }
 
+function validar(movimiento) { //Esta funcion es para validar las peticiones al servidor, principalmnte se van a usar para modificar y crear registros
+    if (!movimiento.fecha) { //Este if valida y obliga a introducir la fecha
+        alert("Fecha obligatoria")
+        return false
+    }
+
+    if (movimiento.concepto === "") { //Este if valida y obliga a introducir el concepto
+        alert("Concepto obligatorio")
+        return false
+    }
+
+    if (!document.querySelector("#gasto").checked && !document.querySelector("#ingreso").checked) { //Este if valida y obliga a elegir el checked entre gasto o ingreso
+        alert("Elija tipo de movimiento") //En la linea de arriba dice: "si el radio button de gasto no esta checkeado y el de ingreso tampoco, entonces salta el mensaje de validacion de la siguiente linea"
+        return false
+    }
+
+    if (movimiento.esGasto && !movimiento.categoria) { //Este if valida y obliga a seleccionar una categora de gasto cuando el checked de gasto esta marcado
+        alert("Debe seleccionar categoria del gasto")
+        return false
+    }
+
+    if (!movimiento.esGasto && movimiento.categoria) { //Este if valida e informa de que si esta el boton de checked marcado en ingreso, no se puede seleccionar categoria
+        alert("Un ingreso no puede tener categoria")
+        return false
+    }
+
+    if (movimiento.cantidad <= 0) {  //Este if valida y obliga a introducir una cantidad positiva mayor que 0
+        alert("La cantidad ha de ser positiva")
+        return false
+    }
+
+    return true //Solo es valida la validacion cuando ha superado todas las validacines anteriores
+}
 
 function llamaApiModificaMovimientos(ev) { //Esta funcion la creo para poder modificar los movimientos que se meustran en la tabla de movimientos del navegador, despues de haber llamado a la API que muestra lo uqe hya en la base de datos
         ev.preventDefault()   // Con el ev.preventDefault, lo que se consigue es que por defecto, no se relance la pagina, se para ese evento
@@ -123,8 +154,9 @@ function llamaApiModificaMovimientos(ev) { //Esta funcion la creo para poder mod
             return
         }   
         
-        const movimiento = capturaFormMovimiento() // //En esta variable movimiento guardo el objeto que devuelve la funcion capturaFormMovimiento, que son los nuevos datos que he introducido en el formulario para modificar un registro existente
-        
+        const movimiento = capturaFormMovimiento() //En esta variable movimiento guardo el objeto que devuelve la funcion capturaFormMovimiento, que son los nuevos datos que he introducido en el formulario para modificar un registro existente
+        if (!validar(movimiento)) // Si no se ha validado el movimiento
+            return //Salte de la funcion 
          
 
         xhr.open("PUT", `http://localhost:5000/api/v1/movimiento/${id}`, true)  //Ahora lanzo la peticion con el xhr.open, igual que he hecho antes, pero aqui incluido, para que se haga este envio en caso de que queramos modificar, ya que ya no quiero que vaya a la fucnion muestraMovimientos, como hace el otro xhr.open que tengo mas arriba. Se incluye el id, que se ha guardado en la memoria en la linea anterior
@@ -156,7 +188,9 @@ function llamaApiCreaMovimientos(ev) {//Esta funcion la creo para poder crear nu
     //En esta funcion no ponemos nada sobre guardar el id, porque cuando se crea el movimiento aun no tiene, quien se lo va a asignar es la base de datos, cuando la peticion viaje al servidor
     
     const movimiento = capturaFormMovimiento() //En esta variable movimiento guardo el objeto que devuelve la funcion capturaFormMovimiento, que son los nuevos datos que he introducido en el formulario para crera un nuevo registro
-    
+    if (!validar(movimiento)) // Si no se ha validado el movimiento
+            return //Salte de la funcion 
+         
     xhr.open("POST", `http://localhost:5000/api/v1/movimiento`, true)  //Ahora lanzo la peticion con el xhr.open, sin id 
     xhr.onload = recibeRespuesta //Este onload, que es el punto de recuperacion de los datos, es para esta petición de PUT. Se va a la función recibeRespuesta, que es la que va a mostrar la modificación en la tabla de movimientos al ejecutarse 
         
@@ -164,6 +198,7 @@ function llamaApiCreaMovimientos(ev) {//Esta funcion la creo para poder crear nu
         
     xhr.send(JSON.stringify(movimiento))   //El metodo stringify lo que hace en este caso es coger un objeto de javascript y convertirlo en un texto que viaja al servidor, es el contrario a json.pars
 }
+
 window.onload = function() { /*Lo que haya dentro de esta funcion se va a ejecutar cuando la pagina termina de cargarse, aunque el script que hay en el fichero spa.html que hace referencia al fichero spa.js, este al principio del documento, en el head, y en teoria se ejecutaria de lo primero. Se va a ejecutar cuando la pagina este cargada, cuando este renderizada, entonces empezara a ejecutar lo que este dentro de la funcion */
     llamaApiMovimientos() /*Cuando la ventana este cargada, entonces se llama a la funcionApiMovimientos*/
     
