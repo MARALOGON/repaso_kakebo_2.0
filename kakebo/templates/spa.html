@@ -34,6 +34,7 @@
     <div class="detail-movimiento container"><!--Este div lo creo que que muestre otra tabla de detalle de movimientos, que se rellene automaticamente cuando seleccione uno de los movimientos que muestra la tabla principal, por si luego lo quiero borrar o modificar. Al sacarlo fuera de section, lo pintarrá como un objeto flotante-->
         <form>
             <div class="row"> <!--creo una clase para las filas-->
+                <input type="hidden" id="idmovimiento"> <!-- Aqui lo que hago es que guardo el id del movimiento en un campo oculto en el formulario de detalle de movimiento, para no perderlo cuando selecciono un movimiento de la tabla de movimientos y quiero que se muestren los valores en los campos del formulario de detalle de movimientos, ya que tengo intención de modificarlo -->
                 <div class="column">
                     <label for="fecha">Fecha</label>  
                     <input type="date" name="fecha" id="fecha"> 
